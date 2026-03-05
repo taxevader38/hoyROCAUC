@@ -28,8 +28,6 @@ columns_to_drop = [
 df = df.drop(columns=columns_to_drop)
 
 # ── 3. TARGET  (3-class: No / recovered / lost) ────────────────────────────────
-# FIX: the original code collapsed "lost account" and "recovered" into one class.
-# Keeping all three gives the model more signal.
 target_col = "Did you ever get hacked?"
 target_map = {
     "No":                              0,
@@ -67,7 +65,7 @@ X = df.drop(columns=["target"])
 y = df["target"]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y   # FIX: stratify preserves class balance
+    X, y, test_size=0.2, random_state=4, stratify=y   # FIX: stratify preserves class balance
 )
 
 # ── 6. CLASS WEIGHTS (handles the 68 / 28 / 18 imbalance) ───────────────────
@@ -79,24 +77,24 @@ class_weight_dict = dict(zip(classes, weights))
 models = {
     "Random Forest": RandomForestClassifier(
         n_estimators=500,
-        max_depth=10,           # FIX: cap depth to reduce overfitting on 145 rows
-        min_samples_leaf=3,    # FIX: require at least 3 samples per leaf
+        max_depth=10,           
+        min_samples_leaf=3,
         class_weight=class_weight_dict,
-        random_state=42,
+        random_state=4,
         n_jobs=-1,
     ),
     "Gradient Boosting": GradientBoostingClassifier(
         n_estimators=500,
         max_depth=10,
         learning_rate=0.05,
-        random_state=42,
+        random_state=4,
     ),
 }
 
 # ── 8. CROSS-VALIDATED EVALUATION ─────────────────────────────────────────────
 # FIX: with only ~116 training rows a single 80/20 split is unreliable.
 # StratifiedKFold gives a much more honest estimate of generalisation.
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=4)
 
 print("=" * 55)
 print("  5-Fold Cross-Validated ROC-AUC (OvR, macro)")
