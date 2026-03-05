@@ -126,34 +126,40 @@ print(classification_report(y_test, y_pred,
       target_names=["Not hacked", "Recovered", "Lost account"]))
 
 # ── 10. PLOTS ──────────────────────────────────────────────────────────────────
-fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-
-# 10a. ROC curves (one-vs-rest per class)
 class_names = ["Not hacked", "Recovered", "Lost account"]
 colors = ["steelblue", "darkorange", "green"]
+
+# After model.fit and predict_proba, create a model confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+
+#Set all important features into an importances series
+importances = pd.Series(best_model.feature_importances_, index=X.columns)
+
+# 10a. ROC Curves ---
+fig1, ax1 = plt.subplots(figsize=(10, 6))
 for i, (cname, color) in enumerate(zip(class_names, colors)):
     fpr, tpr, _ = roc_curve((y_test == i).astype(int), y_probs[:, i])
     auc_i = roc_auc_score((y_test == i).astype(int), y_probs[:, i])
-    axes[0].plot(fpr, tpr, color=color, label=f"{cname} (AUC={auc_i:.2f})")
-axes[0].plot([0, 1], [0, 1], "k--", linewidth=0.8)
-axes[0].set_xlabel("False Positive Rate")
-axes[0].set_ylabel("True Positive Rate")
-axes[0].set_title("ROC Curves (One-vs-Rest)")
-axes[0].legend(fontsize=8)
+    ax1.plot(fpr, tpr, color=color, label=f"{cname} (AUC={auc_i:.2f})")
+ax1.plot([0, 1], [0, 1], "k--", linewidth=0.8)
+ax1.set_xlabel("False Positive Rate")
+ax1.set_ylabel("True Positive Rate")
+ax1.set_title("ROC Curves (One-vs-Rest)")
+ax1.legend(fontsize=8)
+fig1.savefig("roc_curves.png", dpi=150)
+plt.close(fig1)
 
-# 10b. Confusion matrix
-cm = confusion_matrix(y_test, y_pred)
-ConfusionMatrixDisplay(cm, display_labels=class_names).plot(ax=axes[1], colorbar=False)
-axes[1].set_title("Confusion Matrix")
+# 10b. Confusion Matrix ---
+fig2, ax2 = plt.subplots(figsize=(8, 6))
+ConfusionMatrixDisplay(cm, display_labels=class_names).plot(ax=ax2, colorbar=False)
+ax2.set_title("Confusion Matrix")
+fig2.savefig("confusion_matrix.png", dpi=150)
+plt.close(fig2)
 
-# 10c. Feature importances (top 10)
-if hasattr(best_model, "feature_importances_"):
-    importances = pd.Series(best_model.feature_importances_, index=X.columns)
-    importances.nlargest(10).sort_values().plot(kind="barh", ax=axes[2], color="steelblue")
-    axes[2].set_title("Top 10 Feature Importances")
-    axes[2].set_xlabel("Importance")
-
-plt.tight_layout()
-plt.savefig("ml_results.png", dpi=150)
-plt.show()
-print("\nPlot saved to ml_results.png")
+# 10c. Feature Importances ---
+fig3, ax3 = plt.subplots(figsize=(25, 10))
+importances.nlargest(10).sort_values().plot(kind="barh", ax=ax3, color="steelblue")
+ax3.set_title("Top 10 Feature Importances")
+ax3.set_xlabel("Importance")
+fig3.savefig("feature_importances.png", dpi=300)
+plt.close(fig3)
